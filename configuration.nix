@@ -27,7 +27,7 @@
     enable = true;
     enable32Bit = true;
   };
-  hardware.cpu.intel.updateMicrocode = true;
+  hardware.cpu.amd.updateMicrocode = true;
   services.xserver.videoDrivers = [ "amdgpu" ];
 
   # --- SERVIÇOS DO SISTEMA ---
@@ -40,7 +40,31 @@
   services.gnome.gnome-keyring.enable = true;
   services.flatpak.enable = true;
   services.displayManager.defaultSession = "hyprland";
- 
+  services.upower.enable = true;
+  services.mpd.enable = true;
+  services.syncthing = {
+    enable = true;
+    openDefaultPorts = true;
+    guiPasswordFile = "/etc/syncthing-gui-password";
+    settings = {
+      gui.user = "user";
+      devices = {
+        "desktop" = { id = "DEVICE-ID-GOES-HERE"; };
+        "notebook" = { id = "3QNQN3D-TQWLOUQ-QERH75C-ZTRL55B-3MZDP2M-HTHYIDE-5JOLWT2-AIXS5AS"; };
+        "celular" = { id = "63IBIL7-V4B2IRA-MAXLB5P-GU76VTB-TEXDMEF-KC3QCMC-UAIA46M-MKV5SAQ"; };
+      };
+      folders = {
+        "Estudos" = {
+          path = "/home/ely/Obsidian";
+          devices = [ "desktop" "notebook" ];
+        };
+        "Music" = {
+          path = "/home/ely/Music";
+          devices = [ "desktop" "notebook" ];
+        };
+      };
+    };
+  };
   # Docker e ADB
   virtualisation.docker.enable = true;
 
