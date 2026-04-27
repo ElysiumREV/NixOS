@@ -44,26 +44,13 @@
   services.mpd.enable = true;
   services.syncthing = {
     enable = true;
+    user = "ely";
+
+    # Onde os arquivos sincronizados por padrão vão ficar
+    dataDir = "/home/ely/Syncthing";
+    # Onde o Syncthing guarda o config.xml e Device ID
+    configDir = "/home/ely/.config/syncthing";
     openDefaultPorts = true;
-    guiPasswordFile = "/etc/syncthing-gui-password";
-    settings = {
-      gui.user = "user";
-      devices = {
-        "desktop" = { id = "DEVICE-ID-GOES-HERE"; };
-        "notebook" = { id = "3QNQN3D-TQWLOUQ-QERH75C-ZTRL55B-3MZDP2M-HTHYIDE-5JOLWT2-AIXS5AS"; };
-        "celular" = { id = "63IBIL7-V4B2IRA-MAXLB5P-GU76VTB-TEXDMEF-KC3QCMC-UAIA46M-MKV5SAQ"; };
-      };
-      folders = {
-        "Estudos" = {
-          path = "/home/ely/Obsidian";
-          devices = [ "desktop" "notebook" ];
-        };
-        "Music" = {
-          path = "/home/ely/Music";
-          devices = [ "desktop" "notebook" ];
-        };
-      };
-    };
   };
   # Docker e ADB
   virtualisation.docker.enable = true;
@@ -152,6 +139,8 @@
   #];
 
   environment.systemPackages = with pkgs; [
+    # helium
+    
     # Essenciais e Sistema
     neovim vim git git-lfs wget curl unzip _7zz p7zip fastfetch btop htop ncdu tree
     pavucontrol brightnessctl inxi lshw dmidecode smartmontools e2fsprogs dosfstools
@@ -161,9 +150,9 @@
     kitty waybar mako wlogout hyprpaper hyprlock hypridle hyprsunset hyprpolkitagent
     wl-clipboard cliphist grim slurp nwg-look quickshell rofi awww
     
-    # Interface e Arquivos
+    # Interface / Arquivos e Utilidades
     nemo-with-extensions nemo-fileroller file-roller gparted pcmanfm-qt
-    zathura imv krita gimp vlc mpv mpc cava
+    zathura imv krita gimp vlc mpv mpc cava obsidian
     
     # Comunicação e Internet
     firefox bitwarden-desktop discord vesktop telegram-desktop
