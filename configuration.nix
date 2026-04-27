@@ -10,8 +10,17 @@
 
   networking.hostName = "elysium"; 
   networking.networkmanager.enable = true;
+  networking.nameservers = [
+    "9.9.9.9"
+    "149.112.112.112"
+  ];
   time.timeZone = "America/Sao_Paulo";
   i18n.defaultLocale = "en_US.UTF-8";
+  i18n.supportedLocales = [
+    "en_US.UTF-8/UTF-8"
+    "pt_BR.UTF-8/UTF-8"
+    "ja_JP.UTF-8/UTF-8"
+  ];
 
   # Hardware AMD + Intel Microcode
   hardware.graphics = {
@@ -28,10 +37,12 @@
   services.gvfs.enable = true;
   services.udisks2.enable = true;
   programs.dconf.enable = true;
-  
+  services.gnome.gnome-keyring.enable = true;
+  services.flatpak.enable = true;
+  services.displayManager.defaultSession = "hyprland";
+ 
   # Docker e ADB
   virtualisation.docker.enable = true;
-  programs.adb.enable = true;
 
   # --- USUÁRIO E SHELL ---
   users.users.ely = {
@@ -44,7 +55,7 @@
   # Home Manager Integrado (Configuração 2026)
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.users.ely = { pkgs, ... }: {
+  home-manager.users.ely = { pkgs, config, ... }: {
     programs.zsh = {
       enable = true;
       enableCompletion = true;
@@ -66,6 +77,41 @@
       x11.enable = true;
     };
 
+    gtk = {
+      enable = true;
+
+      theme = {
+        name = "Materia-dark";
+        package = pkgs.materia-theme;
+      };
+
+      iconTheme = {
+        name = "Papirus-Dark";
+        package = pkgs.papirus-icon-theme;
+      };
+
+      cursorTheme = {
+        name = "Hackneyed";
+        package = pkgs.hackneyed;
+        size = 24;
+      };
+
+      gtk3.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+      };
+
+      gtk4.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+      };
+      gtk4.theme = config.gtk.theme;
+    };
+
+    qt = {
+      enable = true;
+      platformTheme.name = "qtct";
+      style.name = "kvantum";
+    };
+
     services.easyeffects.enable = true;
 
     home.stateVersion = "25.11"; 
@@ -73,25 +119,31 @@
 
   # --- PACOTES ---
   nixpkgs.config.allowUnfree = true;
+  #nixpkgs.overlays = [
+  #  (final: prev: {
+  #    openldap = prev.openldap.overrideAttrs (old: {
+  #      doCheck = false;
+  #    });
+  #  })
+  #];
 
   environment.systemPackages = with pkgs; [
-    # Essenciais e Sistema (Baseado no seu Arch em 2026)
-    neovim vim git git-lfs wget curl unzip 7zz p7zip fastfetch btop htop ncdu tree
+    # Essenciais e Sistema
+    neovim vim git git-lfs wget curl unzip _7zz p7zip fastfetch btop htop ncdu tree
     pavucontrol brightnessctl inxi lshw dmidecode smartmontools e2fsprogs dosfstools
-    usbutils pciutils radeontop
+    usbutils pciutils radeontop appimage-run
     
-    # Wayland / Hyprland Ecosystem
+    # Wayland / Hyprland Ecosystem / Look and Feel stuff too
     kitty waybar mako wlogout hyprpaper hyprlock hypridle hyprsunset hyprpolkitagent
-    wl-clipboard cliphist grim slurp uwsm nwg-look quickshell
-    rofi-wayland 
+    wl-clipboard cliphist grim slurp nwg-look quickshell rofi awww
     
     # Interface e Arquivos
-    nemo-with-extensions nemo-fileroller gparted partitionmanager pcmanfm-qt
-    ark zathura imv krita gimp vlc mpv mpc cava
+    nemo-with-extensions nemo-fileroller file-roller gparted pcmanfm-qt
+    zathura imv krita gimp vlc mpv mpc cava
     
     # Comunicação e Internet
     firefox bitwarden-desktop discord vesktop telegram-desktop
-    qbittorrent protonvpn-gui
+    qbittorrent proton-vpn
     
     # Dev e SDKs
     gcc gnumake cmake clang llvm asdf-vm
@@ -100,56 +152,108 @@
     openjdk21
     dotnet-sdk_10 # Versão de 2026
     postman
-    
+    android-tools
+    codex
+    ollama
+    claude-code
+
     # Editores
-    vscode jetbrains.idea-community jetbrains-toolbox zed-editor
+    vscode jetbrains-toolbox zed-editor unityhub
     
     # Games e Entretenimento
-    steam lutris prismlauncher rustdesk
-    tetrio-desktop unityhub mangohud goverlay gamescope
-    
+    steam prismlauncher
+    tetrio-desktop mangohud goverlay gamescope
+    #lutris
+    wineWow64Packages.stable
+    winetricks
+    protonup-qt
+    pear-desktop
+    vulkan-tools
+
     # Gravação e Áudio
     gpu-screen-recorder
     gpu-screen-recorder-gtk
     easyeffects
     lsp-plugins
     calf
-    noise-suppression-for-voice
     
     # Temas e Estética
     papirus-icon-theme materia-theme adw-gtk3
-    libsForQt5.qtstyleplugin-kvantum kdePackages.qtstyleplugin-kvantum
-    qt5ct qt6ct hackneyed
+    libsForQt5.qtstyleplugin-kvantum kdePackages.qtstyleplugin-kvantum 
+    libsForQt5.qt5ct kdePackages.qt6ct hackneyed
   ];
+
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
+  programs.gamemode.enable = true;
 
   # Variáveis de Ambiente
   environment.sessionVariables = {
-    XDG_CURRENT_DESKTOP = "Hyprland";
-    XDG_SESSION_TYPE = "wayland";
-    XDG_SESSION_DESKTOP = "Hyprland";
+    #XDG_CURRENT_DESKTOP = "Hyprland";
+    #XDG_SESSION_TYPE = "wayland";
+    #XDG_SESSION_DESKTOP = "Hyprland";
     TERMINAL = "kitty";
     NIXOS_OZONE_WL = "1";
     EDITOR = "nvim";
+    QT_QPA_PLATFORM = "wayland";
+    QT_STYLE_OVERRIDE = "kvantum";
+    QT_AUTO_SCREEN_SCALE_FACTOR = "1";
+    XCURSOR_THEME = "Hackneyed";
+    XCURSOR_SIZE = "24";
+    # Fix GPU Unreal
+    # VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json:/run/opengl-driver-32/share/vulkan/icd.d/radeon_icd.i686.json";
+
   };
 
   # --- SOM E MULTIMÍDIA ---
   security.rtkit.enable = true;
+  security.pam.services.login.enableGnomeKeyring = true;
+  security.pam.services.sddm.enableGnomeKeyring = true;
+  security.pam.services.sshd.enableGnomeKeyring = true;
+  
   services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    jack.enable = true;
-    wireplumber.enable = true;
+  enable = true;
+  alsa.enable = true;
+  pulse.enable = true;
+  jack.enable = true;
+  wireplumber.enable = true;
+
+  extraConfig.pipewire."92-low-latency" = {
+    "context.properties" = {
+      "default.clock.rate" = 48000;
+      "default.clock.quantum" = 1024;
+      "default.clock.min-quantum" = 1024;
+      "default.clock.max-quantum" = 1024;
+    };
   };
+};
 
   # --- DISPLAY MANAGER ---
   services.displayManager.sddm = {
     enable = true;
     wayland.enable = true;
+
+    settings = {
+      Theme = {
+        CursorTheme = "Hackneyed";
+        CursorSize = 24;
+      };
+    };
   };
 
-  programs.hyprland.enable = true;
+  programs.silentSDDM = {
+    enable = true;
+    theme = "rei";
+  };
+
+  programs.hyprland = {
+    enable = true;
+    withUWSM = false;
+  };
+
   programs.steam = {
     enable = true;
     remotePlay.openFirewall = true;
@@ -157,17 +261,53 @@
   };
   
   # Nix LD para rodar AppImages (Zen/Helium)
-  programs.nix-ld.enable = true;
+  programs.nix-ld = {
+  enable = true;
+  libraries = with pkgs; [
+      stdenv.cc.cc
+      zlib
+      openssl
+      curl
+      expat
+      glib
+      gtk3
+      atk
+      at-spi2-atk
+      at-spi2-core
+      pango
+      cairo
+      nss
+      nspr
+      dbus
+      alsa-lib
+      libdrm
+      mesa
+      libglvnd
+      libgbm
+      wayland
+      libxkbcommon
+      libx11
+      libxcomposite
+      libxdamage
+      libxext
+      libxfixes
+      libxrandr
+      libxcb
+      cups
+    ];
+  };
 
   # Fontes
   fonts.packages = with pkgs; [
-    (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+    nerd-fonts.jetbrains-mono
     noto-fonts-cjk-sans
     noto-fonts-color-emoji
     font-awesome
+    ipafont
+    unifont
   ];
 
-  # --- DISCOS (Verifique os UUIDs no seu hardware real) ---
+  # --- DISCOS ---
   fileSystems."/mnt/HDD" = {
     device = "/dev/disk/by-uuid/5c180f20-d517-42b0-a400-d15ca0f9ca96";
     fsType = "ext4";
