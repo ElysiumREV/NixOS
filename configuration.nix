@@ -4,9 +4,7 @@
   # --- SISTEMA E BOOT ---
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  
-  # Usando Kernel ZEN (igual ao seu Arch em 2026)
-  boot.kernelPackages = pkgs.linuxPackages_zen;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking.hostName = "elysium"; 
   networking.networkmanager.enable = true;
@@ -52,14 +50,35 @@
     configDir = "/home/ely/.config/syncthing";
     openDefaultPorts = true;
   };
+  services.auto-cpufreq.enable = true;
+  services.auto-cpufreq.settings = {
+    battery = {
+      governor = "powersave";
+      turbo = "never";
+    };
+    charger = {
+      governor = "performance";
+      turbo = "auto";
+    };
+  };
   # Docker e ADB
-  virtualisation.docker.enable = true;
+  virtualisation = {
+    containers.enable = true;
+    docker = {
+      enable = true;
+    };
+    podman = {
+      enable = false;
+      dockerCompat = true;
+      defaultNetwork.settings.dns_enabled = true;
+    };
+  };
 
   # --- USUÁRIO E SHELL ---
   users.users.ely = {
     isNormalUser = true;
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" "networkmanager" "docker" "adbusers" "lp" "video" ];
+    extraGroups = [ "wheel" "networkmanager" "docker" "adbusers" "lp" "video" "podman" ];
   };
   programs.zsh.enable = true;
 
@@ -92,13 +111,13 @@
       enable = true;
 
       theme = {
-        name = "Materia-dark";
-        package = pkgs.materia-theme;
+        name = "Colloid-Dark";
+        package = pkgs.colloid-gtk-theme;
       };
 
       iconTheme = {
-        name = "Papirus-Dark";
-        package = pkgs.papirus-icon-theme;
+        name = "Colloid-Dark";
+        package = pkgs.colloid-icon-theme;
       };
 
       cursorTheme = {
@@ -116,7 +135,7 @@
       };
       gtk4.theme = config.gtk.theme;
     };
-
+    
     qt = {
       enable = true;
       platformTheme.name = "qtct";
@@ -152,7 +171,7 @@
     
     # Interface / Arquivos e Utilidades
     nemo-with-extensions nemo-fileroller file-roller gparted pcmanfm-qt
-    zathura imv krita gimp vlc mpv mpc cava obsidian
+    zathura imv krita gimp vlc mpv-unwrapped mpc cava obsidian
     
     # Comunicação e Internet
     firefox bitwarden-desktop discord vesktop telegram-desktop
@@ -169,6 +188,8 @@
     codex
     ollama
     claude-code
+    podman
+    podman-desktop
 
     # Editores
     vscode jetbrains-toolbox zed-editor unityhub
@@ -176,7 +197,8 @@
     # Games e Entretenimento
     steam prismlauncher
     tetrio-desktop mangohud goverlay gamescope
-    #lutris
+    # TA QUEBRADO AINDA
+    # lutris
     wineWow64Packages.stable
     winetricks
     protonup-qt
@@ -191,10 +213,19 @@
     calf
     
     # Temas e Estética
-    papirus-icon-theme materia-theme adw-gtk3
+    colloid-gtk-theme colloid-icon-theme adw-gtk3
     libsForQt5.qtstyleplugin-kvantum kdePackages.qtstyleplugin-kvantum 
     libsForQt5.qt5ct kdePackages.qt6ct hackneyed
   ];
+
+  xdg.mime.defaultApplications = {
+    "inode/directory" = "nemo.desktop";
+    "text/html" = "helium-appimage.desktop";
+    "x-scheme-handler/http" = "helium-appimage.desktop";
+    "x-scheme-handler/https" = "helium-appimage.desktop";
+    "x-scheme-handler/about" = "helium-appimage.desktop";
+    "x-scheme-handler/unknown" = "helium-appimage.desktop";
+  };
 
   programs.appimage = {
     enable = true;
@@ -205,8 +236,8 @@
 
   # Variáveis de Ambiente
   environment.sessionVariables = {
-    #XDG_CURRENT_DESKTOP = "Hyprland";
-    #XDG_SESSION_TYPE = "wayland";
+    XDG_CURRENT_DESKTOP = "Hyprland";
+    XDG_SESSION_TYPE = "wayland";
     #XDG_SESSION_DESKTOP = "Hyprland";
     TERMINAL = "kitty";
     NIXOS_OZONE_WL = "1";
