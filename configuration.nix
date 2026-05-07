@@ -84,6 +84,11 @@
   programs.zsh.enable = true;
   programs.zsh.promptInit = "source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
 
+  environment.shellAliases = {
+    update  = "sudo nix flake update --flake /etc/nixos";
+    build   = "sudo nixos-rebuild switch --flake /etc/nixos#elysium";
+  };
+
   # Home Manager Integrado (Configuração 2026)
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
@@ -172,6 +177,8 @@
         };
       };
       settings = {
+        "browser.startup.page" = 3;
+        "browser.sessionstore.resume_session_once" = false;
         "privacy.sanitize.sanitizeOnShutdown" = false;
         "privacy.clearOnShutdown_v2.cookiesAndStorage" = false;
         "privacy.clearOnShutdown_v2.historyFormDataAndDownloads" = false;
