@@ -40,13 +40,13 @@
   services.displayManager.defaultSession = "hyprland";
   services.upower.enable = true;
   services.mpd.enable = true;
+  services.ollama = {
+      enable = true;
+    };
   services.syncthing = {
     enable = true;
     user = "ely";
-
-    # Onde os arquivos sincronizados por padrão vão ficar
     dataDir = "/home/ely/Syncthing";
-    # Onde o Syncthing guarda o config.xml e Device ID
     configDir = "/home/ely/.config/syncthing";
     openDefaultPorts = true;
   };
@@ -73,19 +73,25 @@
       defaultNetwork.settings.dns_enabled = true;
     };
   };
+  virtualisation.libvirtd.enable = true;
 
   # --- USUÁRIO E SHELL ---
   users.users.ely = {
     isNormalUser = true;
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" "networkmanager" "docker" "adbusers" "lp" "video" "podman" ];
+    extraGroups = [ "wheel" "networkmanager" "docker" "adbusers" "lp" "video" "podman" "kvm" "libvirtd" ];
   };
   programs.zsh.enable = true;
+  programs.zsh.promptInit = "source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
 
   # Home Manager Integrado (Configuração 2026)
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
   home-manager.users.ely = { pkgs, config, ... }: {
+    home.packages = with pkgs; [
+      zsh-powerlevel10k
+    ];
+
     programs.zsh = {
       enable = true;
       enableCompletion = true;
@@ -94,9 +100,11 @@
       history.size = 10000;
       oh-my-zsh = {
         enable = true;
-        theme = "lambda";
         plugins = [ "git" ];
       };
+      initContent = ''
+        [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+      '';
     };
 
     home.pointerCursor = {
@@ -142,28 +150,60 @@
       style.name = "kvantum";
     };
 
+    programs.librewolf = {
+      enable = true;
+      profiles = {
+        Elysium = {
+          id = 0;
+          extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
+            ublock-origin
+            bitwarden
+            darkreader
+            violentmonkey
+          ]; 
+        };
+        Justo   = {
+          id = 1;
+          extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
+            ublock-origin
+            bitwarden
+            darkreader
+          ];
+        };
+      };
+      settings = {
+        "privacy.sanitize.sanitizeOnShutdown" = false;
+        "privacy.clearOnShutdown_v2.cookiesAndStorage" = false;
+        "privacy.clearOnShutdown_v2.historyFormDataAndDownloads" = false;
+        "privacy.clearOnShutdown_v2.siteSettings" = false;
+        "privacy.clearOnShutdown.history" = false;
+        "privacy.clearOnShutdown.cookies" = false;
+        "network.cookie.lifetimePolicy" = 0;
+        "webgl.disabled" = false;
+        "privacy.resistFingerprinting" = false;
+      };
+    };
+
     services.easyeffects.enable = true;
+
+    dconf.settings = {
+      "org/gnome/desktop/default-applications/terminal" = {
+        exec = "kitty";
+        exec-arg = "-e";
+      };
+    };
 
     home.stateVersion = "25.11"; 
   };
 
   # --- PACOTES ---
   nixpkgs.config.allowUnfree = true;
-  #nixpkgs.overlays = [
-  #  (final: prev: {
-  #    openldap = prev.openldap.overrideAttrs (old: {
-  #      doCheck = false;
-  #    });
-  #  })
-  #];
 
   environment.systemPackages = with pkgs; [
-    # helium
-    
     # Essenciais e Sistema
-    neovim vim git git-lfs wget curl unzip _7zz p7zip fastfetch btop htop ncdu tree
-    pavucontrol brightnessctl inxi lshw dmidecode smartmontools e2fsprogs dosfstools
-    usbutils pciutils radeontop appimage-run
+    neovim vim git git-lfs wget curl unzip _7zz p7zip p7zip-rar fastfetch btop htop ncdu tree
+    pavucontrol brightnessctl inxi lshw dmidecode smartmontools e2fsprogs dosfstools glib
+    usbutils pciutils radeontop appimage-run ffmpegthumbnailer poppler-utils libreoffice
     
     # Wayland / Hyprland Ecosystem / Look and Feel stuff too
     kitty waybar mako wlogout hyprpaper hyprlock hypridle hyprsunset hyprpolkitagent
@@ -177,7 +217,7 @@
     firefox bitwarden-desktop discord vesktop telegram-desktop
     qbittorrent proton-vpn
     
-    # Dev e SDKs
+    # Dev e SDKs e TALS
     gcc gnumake cmake clang llvm asdf-vm
     python3 python3Packages.pip
     nodejs_24 # Versão LTS/Estável comum em 2026
@@ -190,15 +230,17 @@
     claude-code
     podman
     podman-desktop
+    qemu_kvm
+    libvirt
+    virt-manager
 
     # Editores
-    vscode jetbrains-toolbox zed-editor unityhub
+    vscode zed-editor unityhub android-studio jetbrains.clion jetbrains.idea
     
     # Games e Entretenimento
     steam prismlauncher
     tetrio-desktop mangohud goverlay gamescope
-    # TA QUEBRADO AINDA
-    # lutris
+    #lutris
     wineWow64Packages.stable
     winetricks
     protonup-qt
@@ -220,11 +262,27 @@
 
   xdg.mime.defaultApplications = {
     "inode/directory" = "nemo.desktop";
-    "text/html" = "helium-appimage.desktop";
     "x-scheme-handler/http" = "helium-appimage.desktop";
     "x-scheme-handler/https" = "helium-appimage.desktop";
     "x-scheme-handler/about" = "helium-appimage.desktop";
     "x-scheme-handler/unknown" = "helium-appimage.desktop";
+    "video/mp4" = "vlc.desktop";
+    "video/x-matroska" = "vlc.desktop";
+    "image/png" = "imv-dir.desktop";
+    "image/jpeg" = "imv-dir.desktop";
+    "application/json" = [ "code.desktop" ];
+    "text/plain" = [ "code.desktop" ];
+    "text/x-csrc" = [ "code.desktop" ];
+    "text/x-c++src" = [ "code.desktop" ];
+    "text/x-csharp" = [ "code.desktop" ];
+    "text/x-java" = [ "code.desktop" ];
+    "application/javascript" = [ "code.desktop" ];
+    "text/javascript" = [ "code.desktop" ];
+    "text/x-python" = [ "code.desktop" ];
+    "text/markdown" = [ "code.desktop" ];
+    "application/xml" = [ "code.desktop" ];
+    "text/html" = [ "code.desktop" ];
+    "text/css" = [ "code.desktop" ];
   };
 
   programs.appimage = {
@@ -242,14 +300,14 @@
     TERMINAL = "kitty";
     NIXOS_OZONE_WL = "1";
     EDITOR = "nvim";
+    SUDO_EDITOR="nvim";
     QT_QPA_PLATFORM = "wayland";
     QT_STYLE_OVERRIDE = "kvantum";
     QT_AUTO_SCREEN_SCALE_FACTOR = "1";
     XCURSOR_THEME = "Hackneyed";
     XCURSOR_SIZE = "24";
     # Fix GPU Unreal
-    # VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json:/run/opengl-driver-32/share/vulkan/icd.d/radeon_icd.i686.json";
-
+    VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json:/run/opengl-driver-32/share/vulkan/icd.d/radeon_icd.i686.json";
   };
 
   # --- SOM E MULTIMÍDIA ---
