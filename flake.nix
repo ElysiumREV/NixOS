@@ -11,20 +11,24 @@
       url = "github:uiriansan/SilentSDDM";
       inputs.nixpkgs.follows = "nixpkgs";
    };
-    nur.url = "github:nix-community/NUR";
+    hyprland = {
+      url = "github:hyprwm/Hyprland";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, silentSDDM, nur, ... }: {
+  outputs = inputs@{ nixpkgs, home-manager, silentSDDM, hyprland, ... }: {
     nixosConfigurations.elysium = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
+      specialArgs = {
+        inherit inputs;
+      };
       modules = [
         ./configuration.nix
         ./hardware-configuration.nix
         home-manager.nixosModules.home-manager
         silentSDDM.nixosModules.default
-        {
-          nixpkgs.overlays = [ nur.overlays.default ];
-        }
+        inputs.hyprland.nixosModules.default
       ];
     };
   };

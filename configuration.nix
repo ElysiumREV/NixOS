@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   # --- SISTEMA E BOOT ---
@@ -6,7 +6,7 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  networking.hostName = "elysium"; 
+  networking.hostName = "elysium";
   networking.networkmanager.enable = true;
   networking.nameservers = [
     "9.9.9.9"
@@ -89,7 +89,7 @@
     build   = "sudo nixos-rebuild switch --flake /etc/nixos#elysium";
   };
 
-  # Home Manager Integrado (Configuração 2026)
+  # Home Manager Integrado
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
   home-manager.users.ely = { pkgs, config, ... }: {
@@ -148,46 +148,65 @@
       };
       gtk4.theme = config.gtk.theme;
     };
-    
+
     qt = {
       enable = true;
       platformTheme.name = "qtct";
       style.name = "kvantum";
     };
 
-    programs.librewolf = {
+    programs.firefox = {
+      configPath = ".mozilla/firefox";
       enable = true;
-      profiles = {
-        Elysium = {
-          id = 0;
-          extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
-            ublock-origin
-            bitwarden
-            darkreader
-            violentmonkey
-          ]; 
+
+      policies = {
+        DisableTelemetry = true;
+        DisableFirefoxStudies = true;
+        DisablePocket = true;
+        DisableFirefoxAccounts = false;
+        OfferToSaveLogins = false;
+
+        EnableTrackingProtection = {
+          Value = true;
+          Cryptomining = true;
+          Fingerprinting = true;
+          EmailTracking = true;
+          Locked = true;
         };
-        Justo   = {
-          id = 1;
-          extensions.packages = with pkgs.nur.repos.rycee.firefox-addons; [
-            ublock-origin
-            bitwarden
-            darkreader
-          ];
+
+        DNSOverHTTPS = {
+          Enabled = true;
+          Locked = false;
         };
-      };
-      settings = {
-        "browser.startup.page" = 3;
-        "browser.sessionstore.resume_session_once" = false;
-        "privacy.sanitize.sanitizeOnShutdown" = false;
-        "privacy.clearOnShutdown_v2.cookiesAndStorage" = false;
-        "privacy.clearOnShutdown_v2.historyFormDataAndDownloads" = false;
-        "privacy.clearOnShutdown_v2.siteSettings" = false;
-        "privacy.clearOnShutdown.history" = false;
-        "privacy.clearOnShutdown.cookies" = false;
-        "network.cookie.lifetimePolicy" = 0;
-        "webgl.disabled" = false;
-        "privacy.resistFingerprinting" = false;
+
+        Preferences = {
+          "privacy.resistFingerprinting" = { Value = true; Status = "default"; };
+          "privacy.trackingprotection.enabled" = { Value = true; Status = "default"; };
+          "browser.send_pings" = { Value = false; Status = "locked"; };
+          "beacon.enabled" = { Value = false; Status = "locked"; };
+          "browser.search.suggest.enabled" = { Value = false; Status = "default"; };
+          "browser.urlbar.suggest.searches" = { Value = false; Status = "default"; };
+          "network.cookie.cookieBehavior" = { Value = 1; Status = "default"; };
+        };
+
+        ExtensionSettings = {
+          "*".installation_mode = "allowed";
+
+          "uBlock0@raymondhill.net" = {
+            installation_mode = "force_installed";
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
+          };
+
+          "addon@darkreader.org" = {
+            installation_mode = "force_installed";
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/darkreader/latest.xpi";
+          };
+
+          "{446900e4-71c2-419f-a6a7-df9c091e268b}" = {
+            installation_mode = "force_installed";
+            install_url = "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi";
+          };
+        };
       };
     };
 
@@ -200,7 +219,7 @@
       };
     };
 
-    home.stateVersion = "25.11"; 
+    home.stateVersion = "25.11";
   };
 
   # --- PACOTES ---
@@ -211,19 +230,19 @@
     neovim vim git git-lfs wget curl unzip _7zz p7zip p7zip-rar fastfetch btop htop ncdu tree
     pavucontrol brightnessctl inxi lshw dmidecode smartmontools e2fsprogs dosfstools glib
     usbutils pciutils radeontop appimage-run ffmpegthumbnailer poppler-utils libreoffice
-    
+
     # Wayland / Hyprland Ecosystem / Look and Feel stuff too
-    kitty waybar mako wlogout hyprpaper hyprlock hypridle hyprsunset hyprpolkitagent
-    wl-clipboard cliphist grim slurp nwg-look quickshell rofi awww
-    
+    hyprlauncher hyprshutdown mako wlogout hyprpaper hyprlock hypridle hyprsunset hyprpolkitagent
+    kitty wl-clipboard cliphist grim slurp nwg-look quickshell rofi awww
+
     # Interface / Arquivos e Utilidades
     nemo-with-extensions nemo-fileroller file-roller gparted pcmanfm-qt
     zathura imv krita gimp vlc mpv-unwrapped mpc cava obsidian
-    
+
     # Comunicação e Internet
     firefox bitwarden-desktop discord vesktop telegram-desktop
     qbittorrent proton-vpn
-    
+
     # Dev e SDKs e TALS
     gcc gnumake cmake clang llvm asdf-vm
     python3 python3Packages.pip
@@ -240,10 +259,11 @@
     qemu_kvm
     libvirt
     virt-manager
+    octaveFull
 
     # Editores
     vscode zed-editor unityhub android-studio jetbrains.clion jetbrains.idea
-    
+
     # Games e Entretenimento
     steam prismlauncher
     tetrio-desktop mangohud goverlay gamescope
@@ -260,19 +280,19 @@
     easyeffects
     lsp-plugins
     calf
-    
+
     # Temas e Estética
     colloid-gtk-theme colloid-icon-theme adw-gtk3
-    libsForQt5.qtstyleplugin-kvantum kdePackages.qtstyleplugin-kvantum 
+    libsForQt5.qtstyleplugin-kvantum kdePackages.qtstyleplugin-kvantum
     libsForQt5.qt5ct kdePackages.qt6ct hackneyed
   ];
 
   xdg.mime.defaultApplications = {
     "inode/directory" = "nemo.desktop";
-    "x-scheme-handler/http" = "helium-appimage.desktop";
-    "x-scheme-handler/https" = "helium-appimage.desktop";
-    "x-scheme-handler/about" = "helium-appimage.desktop";
-    "x-scheme-handler/unknown" = "helium-appimage.desktop";
+    "x-scheme-handler/http" = "firefox.desktop";
+    "x-scheme-handler/https" = "firefox.desktop";
+    "x-scheme-handler/about" = "firefox.desktop";
+    "x-scheme-handler/unknown" = "firefox.desktop";
     "video/mp4" = "vlc.desktop";
     "video/x-matroska" = "vlc.desktop";
     "image/png" = "imv-dir.desktop";
@@ -303,14 +323,21 @@
   environment.sessionVariables = {
     XDG_CURRENT_DESKTOP = "Hyprland";
     XDG_SESSION_TYPE = "wayland";
-    #XDG_SESSION_DESKTOP = "Hyprland";
+    XDG_SESSION_DESKTOP = "Hyprland";
     TERMINAL = "kitty";
     NIXOS_OZONE_WL = "1";
     EDITOR = "nvim";
     SUDO_EDITOR="nvim";
-    QT_QPA_PLATFORM = "wayland";
+    GDK_BACKEND = "wayland,x11,*";
+    ELECTRON_OZONE_PLATFORM_HINT = "wayland";
+    CLUTTER_BACKEND = "wayland";
+    QT_QPA_PLATFORMTHEME = "qt5ct";
     QT_STYLE_OVERRIDE = "kvantum";
+    QT_QPA_PLATFORM = "wayland;xcb";
+    QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
     QT_AUTO_SCREEN_SCALE_FACTOR = "1";
+    HYPRCURSOR_THEME = "Hackneyed";
+    HYPRCURSOR_SIZE = "24";
     XCURSOR_THEME = "Hackneyed";
     XCURSOR_SIZE = "24";
     # Fix GPU Unreal
@@ -322,7 +349,7 @@
   security.pam.services.login.enableGnomeKeyring = true;
   security.pam.services.sddm.enableGnomeKeyring = true;
   security.pam.services.sshd.enableGnomeKeyring = true;
-  
+
   services.pipewire = {
   enable = true;
   alsa.enable = true;
@@ -358,9 +385,17 @@
     theme = "rei";
   };
 
+  nix.settings = {
+    substituters = ["https://hyprland.cachix.org"];
+    trusted-substituters = ["https://hyprland.cachix.org"];
+    trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
+  };
+
   programs.hyprland = {
     enable = true;
     withUWSM = false;
+    package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+    portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
   };
 
   programs.steam = {
@@ -368,7 +403,7 @@
     remotePlay.openFirewall = true;
     dedicatedServer.openFirewall = true;
   };
-  
+
   # Nix LD para rodar AppImages (Zen/Helium)
   programs.nix-ld = {
   enable = true;
@@ -430,5 +465,5 @@
   };
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  system.stateVersion = "25.11"; 
+  system.stateVersion = "25.11";
 }
