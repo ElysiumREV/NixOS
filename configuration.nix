@@ -2,7 +2,15 @@
 
 {
   # --- SISTEMA E BOOT ---
-  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.enable = false;
+
+  boot.loader.grub = {
+    enable = true;
+    efiSupport = true;
+    device = "nodev";
+    useOSProber = true;
+  };
+
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
@@ -73,7 +81,13 @@
       defaultNetwork.settings.dns_enabled = true;
     };
   };
-  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd = {
+    enable = true;
+
+    qemu = {
+      swtpm.enable = false;
+    };
+  };
 
   # --- USUÁRIO E SHELL ---
   users.users.ely = {
@@ -213,11 +227,37 @@
     services.easyeffects.enable = true;
 
     dconf.settings = {
-      "org/gnome/desktop/default-applications/terminal" = {
-        exec = "kitty";
-        exec-arg = "-e";
-      };
-    };
+  # GTK/libadwaita prefer dark
+  "org/gnome/desktop/interface" = {
+    color-scheme = "prefer-dark";
+
+    gtk-theme = "Colloid-Dark";
+    icon-theme = "Colloid-Dark";
+    cursor-theme = "Hackneyed";
+
+    font-name = "JetBrainsMono Nerd Font 11";
+    monospace-font-name = "JetBrainsMono Nerd Font Mono 11";
+
+    enable-animations = true;
+  };
+
+  # GNOME apps terminal association
+  "org/gnome/desktop/default-applications/terminal" = {
+    exec = "kitty";
+    exec-arg = "-e";
+  };
+
+  # File chooser + portal consistency
+  "org/gtk/settings/file-chooser" = {
+    sort-directories-first = true;
+    clock-format = "24h";
+  };
+
+  # Optional: dark style for libadwaita apps
+  "org/gnome/desktop/wm/preferences" = {
+    button-layout = "appmenu:minimize,maximize,close";
+  };
+};
 
     home.stateVersion = "25.11";
   };
@@ -240,8 +280,12 @@
     zathura imv krita gimp vlc mpv-unwrapped mpc cava obsidian
 
     # Comunicação e Internet
-    firefox bitwarden-desktop discord vesktop telegram-desktop
-    qbittorrent proton-vpn
+    firefox bitwarden-desktop vesktop telegram-desktop
+    qbittorrent proton-vpn thunderbird
+    (discord.override {
+      withOpenASAR = true; # can do this here too
+      withVencord = true;
+    })
 
     # Dev e SDKs e TALS
     gcc gnumake cmake clang llvm asdf-vm
@@ -343,6 +387,7 @@
     # Fix GPU Unreal
     VK_ICD_FILENAMES = "/run/opengl-driver/share/vulkan/icd.d/radeon_icd.x86_64.json:/run/opengl-driver-32/share/vulkan/icd.d/radeon_icd.i686.json";
   };
+  environment.etc."bin/bash".source = "${pkgs.bash}/bin/bash";
 
   # --- SOM E MULTIMÍDIA ---
   security.rtkit.enable = true;
@@ -465,5 +510,18 @@
   };
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  nixpkgs.overlays = [
+    (final: prev: {
+      mesa = prev.mesa.overrideAttrs (old: {
+        src = prev.fetchurl {
+          url = "https://archive.mesa3d.org/mesa-26.0.6.tar.xz";
+          sha256 = "sha256-HTw7ioNjuMw1QXW7SmhK2LA1IRzB1voXrrm5YjxRP4k=";
+        };
+        version = "26.0.6";
+      });
+    })
+  ];
+
   system.stateVersion = "25.11";
 }
